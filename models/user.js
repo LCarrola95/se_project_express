@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Password is required."],
     minlength: 6,
+    select: false,
   },
 });
 
@@ -41,5 +42,19 @@ userSchema.pre("save", async function (next) {
   }
   next();
 });
+
+userSchema.statics.findUserByCredentials = async function (email, password) {
+  const user = await this.findOne({ email }).select("+password");
+  if (!user) {
+    throw new Error("Incorrect email or password");
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new Error("Incorrect email or password");
+  }
+
+  return user;
+};
 
 module.exports = mongoose.model("user", userSchema);

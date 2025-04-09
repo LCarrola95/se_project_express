@@ -31,20 +31,37 @@ const createClothingItem = (req, res) => {
 
 const deleteClothingItem = (req, res) => {
   const { itemId } = req.params;
+  const userId = req.user._id;
 
-  ClothingItem.findByIdAndDelete(itemId)
+  ClothingItem.findById(itemId)
     .orFail()
-    .then((item) => res.status(200).send(item))
+    .then((item) => {
+      if (item.owner.toString() !== userId.toString()) {
+        return res
+          .status(403)
+          .send({ message: "You do not have permission to delete this item." });
+      }
+
+      return ClothingItem.findByIdAndDelete(itemId);
+    })
+    .then((deletedItem) => {
+      res
+        .status(200)
+        .send({ message: "Clothing item deleted successfully.", deletedItem });
+    })
     .catch((err) => {
       console.error(err);
+
       if (err.name === "DocumentNotFoundError") {
         return res
           .status(NOT_FOUND)
-          .send({ message: "An error has occurred on the server." });
+          .send({ message: "Clothing item not found." });
       }
+
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid data." });
+        return res.status(BAD_REQUEST).send({ message: "Invalid item ID." });
       }
+
       return res
         .status(SERVER_ERROR)
         .send({ message: "An error has occurred on the server." });

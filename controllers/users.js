@@ -6,7 +6,6 @@ const {
   CONFLICT,
   SERVER_ERROR,
 } = require("../utils/errors");
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../utils/config");
 
@@ -24,23 +23,15 @@ const getUsers = (req, res) => {
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
 
-  bcrypt
-    .hash(password, 10)
-    .then((hashedPassword) => {
-      return User.create({
-        name,
-        avatar,
-        email,
-        password: hashedPassword,
-      });
-    })
+  User.create({
+    name,
+    avatar,
+    email,
+    password,
+  })
     .then((user) => {
-      const userWithoutPassword = {
-        _id: user._id,
-        name: user.name,
-        avatar: user.avatar,
-        email: user.email,
-      };
+      const userWithoutPassword = user.toObject();
+      delete userWithoutPassword.password;
       res.status(201).send(userWithoutPassword);
     })
     .catch((err) => {
@@ -62,8 +53,9 @@ const createUser = (req, res) => {
     });
 };
 
-const getUser = (req, res) => {
-  const { userId } = req.params;
+const getCurrentUser = (req, res) => {
+  const userId = req.user._id;
+
   User.findById(userId)
     .orFail()
     .then((user) => res.status(200).send(user))
@@ -81,39 +73,46 @@ const getUser = (req, res) => {
     });
 };
 
-const login = (req, res) => {
-  const { email, password } = req.body;
+const updateUser = (req, res) => {
+  const userId = req.user._id;
+  const { name, avatar } = req.body;
 
-  User.findOne({ email })
-    .then((user) => {
-      if (!user) {
-        return Promise.reject(new Error("Incorrect email or password"));
-      }
-
-      return bcrypt.compare(password, user.password).then((matched) => {
-        if (!matched) {
-          return Promise.reject(new Error("Incorrect email or password"));
-        }
-
-        const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
-          expiresIn: "7d",
-        });
-        res.send({ token });
-      });
-    })
+  User.findByIdAndUpdate(
+    userId,
+    { name, avatar },
+    { new: true, runValidators: true }
+  )
+    .orFail()
+    .then((updatedUser) => res.status(200).send(updatedUser))
     .catch((err) => {
       console.error(err);
-
-      if (err.message === "Incorrect email or password") {
+      if (err.name === "ValidationError") {
         return res
-          .status(UNAUTHORIZED)
-          .send({ message: "Incorrect email or password" });
+          .status(BAD_REQUEST)
+          .send({ message: "Invalid data provided for update" });
       }
-
+      if (err.name === "DocumentNotFoundError") {
+        return res.status(NOT_FOUND).send({ message: "User not found." });
+      }
       return res
         .status(SERVER_ERROR)
-        .send({ message: "An error has occurred on the server." });
+        .send({ message: "An error has occurred on the server " });
     });
 };
 
-module.exports = { getUsers, createUser, getUser, login };
+const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findUserByCredentials(email, password);
+    const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    res.send({ token });
+  } catch (err) {
+    console.error(err);
+    return res.status(UNAUTHORIZED).send({ message: err.message });
+  }
+};
+
+module.exports = { getUsers, createUser, getCurrentUser, updateUser, login };
