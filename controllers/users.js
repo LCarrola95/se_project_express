@@ -23,16 +23,34 @@ const getUsers = (req, res) => {
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
 
-  User.create({
-    name,
-    avatar,
-    email,
-    password,
-  })
+  if (!name || !avatar || !email || !password) {
+    return res
+      .status(BAD_REQUEST)
+      .send({ message: "All fields are required." });
+  }
+
+  User.findOne({ email })
+    .then((existingUser) => {
+      if (existingUser) {
+        return res
+          .status(CONFLICT)
+          .send({ message: "A user with this email already exists." });
+      }
+
+      return User.create({ name, avatar, email, password });
+    })
     .then((user) => {
       const userWithoutPassword = user.toObject();
       delete userWithoutPassword.password;
-      res.status(201).send(userWithoutPassword);
+
+      res.status(201).send({
+        message: "User created successfully.",
+        user: {
+          name: userWithoutPassword.name,
+          avatar: userWithoutPassword.avatar,
+          email: userWithoutPassword.email,
+        },
+      });
     })
     .catch((err) => {
       console.error(err);
