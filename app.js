@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cors());
 
 app.post("/signin", login);
-app.post("signup", createUser);
+app.post("/signup", createUser);
 
 app.use(auth);
 
