@@ -43,14 +43,7 @@ const createUser = (req, res) => {
       const userWithoutPassword = user.toObject();
       delete userWithoutPassword.password;
 
-      res.status(201).send({
-        message: "User created successfully.",
-        user: {
-          name: userWithoutPassword.name,
-          avatar: userWithoutPassword.avatar,
-          email: userWithoutPassword.email,
-        },
-      });
+      res.status(201).send(userWithoutPassword);
     })
     .catch((err) => {
       console.error(err);
