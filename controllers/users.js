@@ -9,17 +9,6 @@ const {
 } = require("../utils/errors");
 const { JWT_SECRET } = require("../utils/config");
 
-const getUsers = (req, res) => {
-  User.find({})
-    .then((users) => res.send(users))
-    .catch((err) => {
-      console.error(err);
-      return res
-        .status(SERVER_ERROR)
-        .send({ message: "An error has occurred on the server." });
-    });
-};
-
 const createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
 
@@ -132,4 +121,4 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, createUser, getCurrentUser, updateUser, login };
+module.exports = { createUser, getCurrentUser, updateUser, login };
