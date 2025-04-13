@@ -48,12 +48,10 @@ const deleteClothingItem = (req, res) => {
       }
 
       return ClothingItem.findByIdAndDelete(itemId).then((deletedItem) => {
-        res
-          .status(200)
-          .send({
-            message: "Clothing item deleted successfully.",
-            deletedItem,
-          });
+        res.status(200).send({
+          message: "Clothing item deleted successfully.",
+          deletedItem,
+        });
       });
     })
     .catch((err) => {
@@ -75,8 +73,86 @@ const deleteClothingItem = (req, res) => {
     });
 };
 
+const addLike = (req, res) => {
+  const { itemId } = req.params;
+  const userId = req.user._id;
+
+  ClothingItem.findById(itemId)
+    .orFail()
+    .then((item) => {
+      if (item.likes.includes(userId)) {
+        return res
+          .status(BAD_REQUEST)
+          .send({ message: "You have already liked this item." });
+      }
+
+      const updatedItem = {
+        ...item.toObject(),
+        likes: [...item.likes, userId],
+      };
+      return ClothingItem.findByIdAndUpdate(itemId, updatedItem, {
+        new: true,
+      }).then(() => res.status(200).send(updatedItem));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.name === "DocumentNotFoundError") {
+        return res
+          .status(NOT_FOUND)
+          .send({ message: "Clothing item not found." });
+      }
+      if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid item ID." });
+      }
+      return res
+        .status(SERVER_ERROR)
+        .send({ message: "An error has occurred on the server." });
+    });
+};
+
+const deleteLike = (req, res) => {
+  const { itemId } = req.params;
+  const userId = req.user._id;
+
+  ClothingItem.findById(itemId)
+    .orFail()
+    .then((item) => {
+      if (!item.likes.includes(userId)) {
+        return res
+          .status(BAD_REQUEST)
+          .send({ message: "You have not liked this item." });
+      }
+
+      const updatedItem = {
+        ...item.toObject(),
+        likes: item.likes.filter(
+          (like) => like.toString() !== userId.toString()
+        ),
+      };
+      return ClothingItem.findByIdAndUpdate(itemId, updatedItem, {
+        new: true,
+      }).then(() => res.status(200).send(updatedItem));
+    })
+    .catch((err) => {
+      console.error(err);
+      if (err.name === "DocumentNotFoundError") {
+        return res
+          .status(NOT_FOUND)
+          .send({ message: "Clothing item not found." });
+      }
+      if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).send({ message: "Invalid item ID." });
+      }
+      return res
+        .status(SERVER_ERROR)
+        .send({ message: "An error has occurred on the server." });
+    });
+};
+
 module.exports = {
   getClothingItems,
   createClothingItem,
   deleteClothingItem,
+  addLike,
+  deleteLike,
 };
