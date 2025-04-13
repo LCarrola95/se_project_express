@@ -1,5 +1,10 @@
 const ClothingItem = require("../models/clothingItem");
-const { BAD_REQUEST, NOT_FOUND, SERVER_ERROR } = require("../utils/errors");
+const {
+  BAD_REQUEST,
+  FORBIDDEN,
+  NOT_FOUND,
+  SERVER_ERROR,
+} = require("../utils/errors");
 
 const getClothingItems = (req, res) => {
   ClothingItem.find({})
@@ -38,16 +43,18 @@ const deleteClothingItem = (req, res) => {
     .then((item) => {
       if (item.owner.toString() !== userId.toString()) {
         return res
-          .status(403)
+          .status(FORBIDDEN)
           .send({ message: "You do not have permission to delete this item." });
       }
 
-      return ClothingItem.findByIdAndDelete(itemId);
-    })
-    .then((deletedItem) => {
-      res
-        .status(200)
-        .send({ message: "Clothing item deleted successfully.", deletedItem });
+      return ClothingItem.findByIdAndDelete(itemId).then((deletedItem) => {
+        res
+          .status(200)
+          .send({
+            message: "Clothing item deleted successfully.",
+            deletedItem,
+          });
+      });
     })
     .catch((err) => {
       console.error(err);

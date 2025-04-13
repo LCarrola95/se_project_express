@@ -1,15 +1,8 @@
 const router = require("express").Router();
-const {
-  getClothingItems,
-  createClothingItem,
-  deleteClothingItem,
-} = require("../controllers/clothingItems");
-const { likeItem, dislikeItem } = require("../controllers/likes");
+const { getCurrentUser, updateUser } = require("../controllers/users");
+const auth = require("../middlewares/auth");
 
-router.get("/", getClothingItems);
-router.post("/", createClothingItem);
-router.delete("/:itemId", deleteClothingItem);
-router.put("/:itemId/likes", likeItem);
-router.delete("/:itemId/likes", dislikeItem);
+router.get("/me", auth, getCurrentUser);
+router.patch("/me", auth, updateUser);
 
 module.exports = router;

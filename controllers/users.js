@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const {
   BAD_REQUEST,
@@ -6,13 +7,15 @@ const {
   CONFLICT,
   SERVER_ERROR,
 } = require("../utils/errors");
-const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../utils/config");
 
 const getUsers = (req, res) => {
   User.find({})
-    .then((users) => res.send(users))
+    .then(
+      (users) => res.send(users) // Explicitly return the response
+    )
     .catch((err) => {
+      // eslint-disable-next-line no-console
       console.error(err);
       return res
         .status(SERVER_ERROR)
@@ -29,23 +32,15 @@ const createUser = (req, res) => {
       .send({ message: "All fields are required." });
   }
 
-  User.findOne({ email })
-    .then((existingUser) => {
-      if (existingUser) {
-        return res
-          .status(CONFLICT)
-          .send({ message: "A user with this email already exists." });
-      }
-
-      return User.create({ name, avatar, email, password });
-    })
+  return User.create({ name, avatar, email, password }) // Ensure to return the promise
     .then((user) => {
       const userWithoutPassword = user.toObject();
       delete userWithoutPassword.password;
 
-      res.status(201).send(userWithoutPassword);
+      return res.status(201).send(userWithoutPassword); // Explicitly return the response
     })
     .catch((err) => {
+      // eslint-disable-next-line no-console
       console.error(err);
 
       if (err.code === 11000) {
@@ -69,8 +64,11 @@ const getCurrentUser = (req, res) => {
 
   User.findById(userId)
     .orFail()
-    .then((user) => res.status(200).send(user))
+    .then(
+      (user) => res.status(200).send(user) // Explicitly return the response
+    )
     .catch((err) => {
+      // eslint-disable-next-line no-console
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: "User not found." });
@@ -94,8 +92,11 @@ const updateUser = (req, res) => {
     { new: true, runValidators: true }
   )
     .orFail()
-    .then((updatedUser) => res.status(200).send(updatedUser))
+    .then(
+      (updatedUser) => res.status(200).send(updatedUser) // Explicitly return the response
+    )
     .catch((err) => {
+      // eslint-disable-next-line no-console
       console.error(err);
       if (err.name === "ValidationError") {
         return res
@@ -114,15 +115,31 @@ const updateUser = (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(BAD_REQUEST)
+      .send({ message: "Email and password are required." });
+  }
+
   try {
     const user = await User.findUserByCredentials(email, password);
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
-    res.send({ token });
+    return res.send({ token }); // Explicitly return the response
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error(err);
-    return res.status(UNAUTHORIZED).send({ message: err.message });
+
+    if (err.message === "Incorrect email or password") {
+      return res
+        .status(UNAUTHORIZED)
+        .send({ message: "Incorrect email or password." });
+    }
+
+    return res
+      .status(SERVER_ERROR)
+      .send({ message: "An error has occurred on the server." });
   }
 };
 

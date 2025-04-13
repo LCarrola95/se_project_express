@@ -1,9 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const mainRouter = require("./routes/index");
 const { login, createUser } = require("./controllers/users");
 const auth = require("./middlewares/auth");
-const cors = require("cors");
 
 const app = express();
 
@@ -21,8 +21,6 @@ app.use(cors());
 
 app.post("/signin", login);
 app.post("/signup", createUser);
-
-app.use(auth);
 
 app.use("/", mainRouter);
 
