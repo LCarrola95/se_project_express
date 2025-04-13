@@ -11,11 +11,8 @@ const { JWT_SECRET } = require("../utils/config");
 
 const getUsers = (req, res) => {
   User.find({})
-    .then(
-      (users) => res.send(users) // Explicitly return the response
-    )
+    .then((users) => res.send(users))
     .catch((err) => {
-      // eslint-disable-next-line no-console
       console.error(err);
       return res
         .status(SERVER_ERROR)
@@ -32,15 +29,14 @@ const createUser = (req, res) => {
       .send({ message: "All fields are required." });
   }
 
-  return User.create({ name, avatar, email, password }) // Ensure to return the promise
+  return User.create({ name, avatar, email, password })
     .then((user) => {
       const userWithoutPassword = user.toObject();
       delete userWithoutPassword.password;
 
-      return res.status(201).send(userWithoutPassword); // Explicitly return the response
+      return res.status(201).send(userWithoutPassword);
     })
     .catch((err) => {
-      // eslint-disable-next-line no-console
       console.error(err);
 
       if (err.code === 11000) {
@@ -64,11 +60,8 @@ const getCurrentUser = (req, res) => {
 
   User.findById(userId)
     .orFail()
-    .then(
-      (user) => res.status(200).send(user) // Explicitly return the response
-    )
+    .then((user) => res.status(200).send(user))
     .catch((err) => {
-      // eslint-disable-next-line no-console
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
         return res.status(NOT_FOUND).send({ message: "User not found." });
@@ -92,11 +85,8 @@ const updateUser = (req, res) => {
     { new: true, runValidators: true }
   )
     .orFail()
-    .then(
-      (updatedUser) => res.status(200).send(updatedUser) // Explicitly return the response
-    )
+    .then((updatedUser) => res.status(200).send(updatedUser))
     .catch((err) => {
-      // eslint-disable-next-line no-console
       console.error(err);
       if (err.name === "ValidationError") {
         return res
@@ -126,9 +116,8 @@ const login = async (req, res) => {
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
-    return res.send({ token }); // Explicitly return the response
+    return res.send({ token });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.error(err);
 
     if (err.message === "Incorrect email or password") {
