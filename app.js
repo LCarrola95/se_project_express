@@ -3,11 +3,13 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
+const { errors } = require("celebrate");
 const mainRouter = require("./routes/index");
 const { login, createUser } = require("./controllers/users");
 const errorHandler = require("./middlewares/error-handler");
-const { errors } = require("celebrate");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
+
+const { validateLogin, validateUser } = require("./middlewares/validation");
 
 const app = express();
 
@@ -31,8 +33,8 @@ app.get("/crash-test", () => {
   }, 0);
 });
 
-app.post("/signin", login);
-app.post("/signup", createUser);
+app.post("/signin", validateLogin, login);
+app.post("/signup", validateUser, createUser);
 
 app.use("/", mainRouter);
 

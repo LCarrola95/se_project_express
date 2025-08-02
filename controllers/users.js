@@ -15,11 +15,11 @@ const createUser = (req, res, next) => {
     return next(new BadRequestError("All fields are required."));
   }
 
-  User.create({ name, avatar, email, password })
+  return User.create({ name, avatar, email, password })
     .then((user) => {
       const userWithoutPassword = user.toObject();
       delete userWithoutPassword.password;
-      res.status(201).send(userWithoutPassword);
+      return res.status(201).send(userWithoutPassword);
     })
     .catch((err) => {
       console.error(err);
@@ -32,7 +32,7 @@ const createUser = (req, res, next) => {
       if (err.name === "ValidationError") {
         return next(new BadRequestError("Invalid data."));
       }
-      next(err);
+      return next(err);
     });
 };
 
@@ -50,7 +50,7 @@ const getCurrentUser = (req, res, next) => {
       if (err.name === "CastError") {
         return next(new BadRequestError("Invalid user ID."));
       }
-      next(err);
+      return next(err);
     });
 };
 
@@ -73,7 +73,7 @@ const updateUser = (req, res, next) => {
       if (err.name === "DocumentNotFoundError") {
         return next(new NotFoundError("User not found."));
       }
-      next(err);
+      return next(err);
     });
 };
 
@@ -89,14 +89,14 @@ const login = async (req, res, next) => {
     const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
       expiresIn: "7d",
     });
-    res.send({ token });
+    return res.send({ token });
   } catch (err) {
     console.error(err);
 
     if (err.message === "Incorrect email or password") {
       return next(new UnauthorizedError("Incorrect email or password."));
     }
-    next(err);
+    return next(err);
   }
 };
 

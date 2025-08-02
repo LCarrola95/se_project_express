@@ -10,7 +10,7 @@ const getClothingItems = (req, res, next) => {
     .then((items) => res.status(200).send(items))
     .catch((err) => {
       console.error(err);
-      next(err);
+      return next(err);
     });
 };
 
@@ -25,7 +25,7 @@ const createClothingItem = (req, res, next) => {
       if (err.name === "ValidationError") {
         return next(new BadRequestError("Invalid data."));
       }
-      next(err);
+      return next(err);
     });
 };
 
@@ -42,12 +42,12 @@ const deleteClothingItem = (req, res, next) => {
         );
       }
 
-      return ClothingItem.findByIdAndDelete(itemId).then((deletedItem) => {
+      return ClothingItem.findByIdAndDelete(itemId).then((deletedItem) =>
         res.status(200).send({
           message: "Clothing item deleted successfully.",
           deletedItem,
-        });
-      });
+        })
+      );
     })
     .catch((err) => {
       console.error(err);
@@ -60,7 +60,7 @@ const deleteClothingItem = (req, res, next) => {
         return next(new BadRequestError("Invalid item ID."));
       }
 
-      next(err);
+      return next(err);
     });
 };
 
@@ -91,7 +91,7 @@ const addLike = (req, res, next) => {
       if (err.name === "CastError") {
         return next(new BadRequestError("Invalid item ID."));
       }
-      next(err);
+      return next(err);
     });
 };
 
@@ -124,7 +124,7 @@ const deleteLike = (req, res, next) => {
       if (err.name === "CastError") {
         return next(new BadRequestError("Invalid item ID."));
       }
-      next(err);
+      return next(err);
     });
 };
 
